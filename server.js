@@ -21,8 +21,7 @@ const SUFFIXES = {
     'dd': 1e39,
     'td': 1e42,
     'qd': 1e45,
-    'qd': 1e45,
-    'qi': 1e48,
+    'qi2': 1e48,
     'si': 1e51,
     'spi': 1e54,
     'oci': 1e57,
@@ -34,10 +33,10 @@ const SUFFIXES = {
     'qdi': 1e75,
     'qii': 1e78,
     'sxi': 1e81,
-    'spi': 1e84,
-    'oci': 1e87,
-    'noi': 1e90,
-    'dci': 1e93,
+    'spi2': 1e84,
+    'oci2': 1e87,
+    'noi2': 1e90,
+    'dci2': 1e93,
     'uv': 1e96,
     'dv': 1e99,
     'tv': 1e102,
@@ -48,16 +47,16 @@ const SUFFIXES = {
     'ocv': 1e117,
     'nov': 1e120,
     'dcv': 1e123,
-    'uv': 1e126,
+    'uv2': 1e126,
     'ddv': 1e129,
     'tdv': 1e132,
     'qdv': 1e135,
-    'qiv': 1e138,
-    'sxv': 1e141,
-    'spv': 1e144,
-    'ocv': 1e147,
-    'nov': 1e150,
-    'dcv': 1e153,
+    'qiv2': 1e138,
+    'sxv2': 1e141,
+    'spv2': 1e144,
+    'ocv2': 1e147,
+    'nov2': 1e150,
+    'dcv2': 1e153,
     'ut': 1e156,
     'dt': 1e159,
     'tt': 1e162,
@@ -99,18 +98,24 @@ const SUFFIXES = {
 function parseNumberWithSuffix(input) {
     if (!input) return null;
     const str = String(input).toLowerCase().trim();
-    const match = str.match(/^(\d+(?:\.\d+)?)([a-z]+)?$/i);
-    if (!match) return null;
-    let value = parseFloat(match[1]);
-    let suffix = (match[2] || '').toLowerCase();
-    if (isNaN(value)) return null;
-    if (suffix && SUFFIXES[suffix]) {
-        const result = value * SUFFIXES[suffix];
-        if (result > 1e260) return 1e260;
-        return result;
+    const suffixesSorted = Object.keys(SUFFIXES).sort((a, b) => b.length - a.length);
+    for (const suffix of suffixesSorted) {
+        if (str.endsWith(suffix)) {
+            const numStr = str.slice(0, -suffix.length);
+            const value = parseFloat(numStr);
+            if (!isNaN(value)) {
+                const result = value * SUFFIXES[suffix];
+                if (result > 1e260) return 1e260;
+                return result;
+            }
+        }
     }
-    if (value > 1e260) return 1e260;
-    return value;
+    const value = parseFloat(str);
+    if (!isNaN(value)) {
+        if (value > 1e260) return 1e260;
+        return value;
+    }
+    return null;
 }
 
 function formatNumberWithSuffix(num) {
@@ -118,7 +123,7 @@ function formatNumberWithSuffix(num) {
     const absNum = Math.min(Math.abs(num), 1e260);
     const sign = num < 0 ? "-" : "";
     const tiers = [
-        { v: 1e258, s: "QiU" }, { v: 1e255, s: "Qu" }, { v: 1e252, s: "Tu" }, { v: 1e249, s: "Du" }, { v: 1e246, s: "Uc" },
+        { v: 1e258, s: "Qiu" }, { v: 1e255, s: "Qu" }, { v: 1e252, s: "Tu" }, { v: 1e249, s: "Du" }, { v: 1e246, s: "Uc" },
         { v: 1e243, s: "DcQ" }, { v: 1e240, s: "NoQ" }, { v: 1e237, s: "OcQ" }, { v: 1e234, s: "SpQ" }, { v: 1e231, s: "SxQ" },
         { v: 1e228, s: "QiQ" }, { v: 1e225, s: "QQ" }, { v: 1e222, s: "TQ" }, { v: 1e219, s: "DQ" }, { v: 1e216, s: "UQ" },
         { v: 1e213, s: "DcTr" }, { v: 1e210, s: "NoTr" }, { v: 1e207, s: "OcTr" }, { v: 1e204, s: "SpTr" }, { v: 1e201, s: "SxTr" },
@@ -143,7 +148,7 @@ function formatNumberWithSuffix(num) {
 }
 
 app.get("/", (req, res) => {
-    res.json({ message: "Numbers Conversion API", version: "3.0", status: "online", max_suffix: "1e258 (QiU)" });
+    res.json({ message: "Numbers Conversion API", version: "3.1", status: "online", max_suffix: "1e258 (Qiu)" });
 });
 
 app.get("/api/parse", (req, res) => {
