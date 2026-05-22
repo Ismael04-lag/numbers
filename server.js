@@ -5,177 +5,198 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Suffixes classiques jusqu'à 10^39
 const SUFFIXES = {
-    'k': 10n ** 3n,
-    'm': 10n ** 6n,
-    'b': 10n ** 9n,
-    't': 10n ** 12n,
-    'q': 10n ** 15n,
-    'Qa': 10n ** 18n,
-    'Qi': 10n ** 21n,
-    'Sx': 10n ** 24n,
-    'Sp': 10n ** 27n,
-    'Oc': 10n ** 30n,
-    'No': 10n ** 33n,
-    'Dc': 10n ** 36n,
-    'Dq': 10n ** 39n,
-    'Dz': 10n ** 42n,
-    'Qs': 10n ** 45n,
-    'Qo': 10n ** 48n,
-    'Qu': 10n ** 51n
+    'k': 1e3,
+    'm': 1e6,
+    'b': 1e9,
+    't': 1e12,
+    'qa': 1e15,
+    'qi': 1e18,
+    'sx': 1e21,
+    'sp': 1e24,
+    'oc': 1e27,
+    'no': 1e30,
+    'dc': 1e33,
+    'ud': 1e36,
+    'dd': 1e39,
+    'td': 1e42,
+    'qd': 1e45,
+    'qd': 1e45,
+    'qi': 1e48,
+    'si': 1e51,
+    'spi': 1e54,
+    'oci': 1e57,
+    'noi': 1e60,
+    'dci': 1e63,
+    'udi': 1e66,
+    'ddi': 1e69,
+    'tdi': 1e72,
+    'qdi': 1e75,
+    'qii': 1e78,
+    'sxi': 1e81,
+    'spi': 1e84,
+    'oci': 1e87,
+    'noi': 1e90,
+    'dci': 1e93,
+    'uv': 1e96,
+    'dv': 1e99,
+    'tv': 1e102,
+    'qv': 1e105,
+    'qiv': 1e108,
+    'sxv': 1e111,
+    'spv': 1e114,
+    'ocv': 1e117,
+    'nov': 1e120,
+    'dcv': 1e123,
+    'uv': 1e126,
+    'ddv': 1e129,
+    'tdv': 1e132,
+    'qdv': 1e135,
+    'qiv': 1e138,
+    'sxv': 1e141,
+    'spv': 1e144,
+    'ocv': 1e147,
+    'nov': 1e150,
+    'dcv': 1e153,
+    'ut': 1e156,
+    'dt': 1e159,
+    'tt': 1e162,
+    'qt': 1e165,
+    'qit': 1e168,
+    'sxt': 1e171,
+    'spt': 1e174,
+    'oct': 1e177,
+    'not': 1e180,
+    'dct': 1e183,
+    'utr': 1e186,
+    'dtr': 1e189,
+    'ttr': 1e192,
+    'qtr': 1e195,
+    'qitr': 1e198,
+    'sxtr': 1e201,
+    'sptr': 1e204,
+    'octr': 1e207,
+    'notr': 1e210,
+    'dctr': 1e213,
+    'uq': 1e216,
+    'dq': 1e219,
+    'tq': 1e222,
+    'qq': 1e225,
+    'qiq': 1e228,
+    'sxq': 1e231,
+    'spq': 1e234,
+    'ocq': 1e237,
+    'noq': 1e240,
+    'dcq': 1e243,
+    'uc': 1e246,
+    'du': 1e249,
+    'tu': 1e252,
+    'qu': 1e255,
+    'qiu': 1e258,
+    'sxu': 1e261
 };
 
-// ------------------------------------------------------------
-// Convertit une chaîne en chaîne décimale exacte (BigInt)
-// Accepte : "2.5m", "1e300", "2.5e300"
-// ------------------------------------------------------------
-function parseAmountWithSuffix(input) {
-    if (!input && input !== 0) return null;
-    const str = String(input).toLowerCase().replace(/\s/g, '');
-
-    // 1. Notation scientifique explicite (ex: "1e300", "2.5e300")
-    const sciMatch = str.match(/^(\d+(?:\.\d+)?)e(\d+)$/i);
-    if (sciMatch) {
-        const base = sciMatch[1];
-        const exp = BigInt(sciMatch[2]);
-        try {
-            if (base.includes('.')) {
-                const parts = base.split('.');
-                const integerPart = parts[0];
-                const decimalPart = parts[1];
-                const decimalLength = BigInt(decimalPart.length);
-                const bigBase = BigInt(integerPart + decimalPart);
-                // bigBase * 10^exp / 10^decimalLength
-                const result = (bigBase * (10n ** exp)) / (10n ** decimalLength);
-                return result.toString();
-            } else {
-                const bigBase = BigInt(base);
-                return (bigBase * (10n ** exp)).toString();
-            }
-        } catch { return null; }
-    }
-
-    // 2. Suffixes classiques (k, m, b, ..., D)
-    const suffixChars = Object.keys(SUFFIXES).join('');
-    const regex = new RegExp(`^(\\d+(?:\\.\\d+)?)([${suffixChars}]?)$`, 'i');
-    const match = str.match(regex);
+function parseNumberWithSuffix(input) {
+    if (!input) return null;
+    const str = String(input).toLowerCase().trim();
+    const match = str.match(/^(\d+(?:\.\d+)?)([a-z]+)?$/i);
     if (!match) return null;
-
-    let valueStr = match[1];
-    const suffix = match[2]?.toLowerCase();
-
-    let bigValue;
-    if (valueStr.includes('.')) {
-        const parts = valueStr.split('.');
-        const integerPart = parts[0];
-        const decimalPart = parts[1];
-        const decimalLength = BigInt(decimalPart.length);
-        bigValue = BigInt(integerPart + decimalPart);
-        const multiplier = SUFFIXES[suffix] || 1n;
-        bigValue = (bigValue * multiplier) / (10n ** decimalLength);
-    } else {
-        bigValue = BigInt(valueStr) * (SUFFIXES[suffix] || 1n);
+    let value = parseFloat(match[1]);
+    let suffix = (match[2] || '').toLowerCase();
+    if (isNaN(value)) return null;
+    if (suffix && SUFFIXES[suffix]) {
+        const result = value * SUFFIXES[suffix];
+        if (result > 1e260) return 1e260;
+        return result;
     }
-
-    return bigValue.toString();
+    if (value > 1e260) return 1e260;
+    return value;
 }
 
-// ------------------------------------------------------------
-// Formate un nombre (chaîne) avec le suffixe le plus approprié,
-// ou en notation scientifique pour les très grands nombres
-// ------------------------------------------------------------
 function formatNumberWithSuffix(num) {
-    if (num === null || num === undefined || num === '') return "0";
-    try {
-        const bigNum = BigInt(num);
-        if (bigNum === 0n) return "0";
-
-        const absNum = bigNum < 0n ? -bigNum : bigNum;
-        const sign = bigNum < 0n ? "-" : "";
-
-        // Chercher le plus grand suffixe <= absNum
-        const sorted = Object.entries(SUFFIXES).sort((a, b) => {
-            if (b[1] > a[1]) return 1;
-            if (b[1] < a[1]) return -1;
-            return 0;
-        });
-
-        let bestSuffix = null;
-        let bestValue = null;
-        for (const [suffix, value] of sorted) {
-            if (absNum >= value) {
-                bestSuffix = suffix;
-                bestValue = value;
-                break;
-            }
+    if (num === null || num === undefined || isNaN(num)) return "0";
+    const absNum = Math.min(Math.abs(num), 1e260);
+    const sign = num < 0 ? "-" : "";
+    const tiers = [
+        { v: 1e258, s: "QiU" }, { v: 1e255, s: "Qu" }, { v: 1e252, s: "Tu" }, { v: 1e249, s: "Du" }, { v: 1e246, s: "Uc" },
+        { v: 1e243, s: "DcQ" }, { v: 1e240, s: "NoQ" }, { v: 1e237, s: "OcQ" }, { v: 1e234, s: "SpQ" }, { v: 1e231, s: "SxQ" },
+        { v: 1e228, s: "QiQ" }, { v: 1e225, s: "QQ" }, { v: 1e222, s: "TQ" }, { v: 1e219, s: "DQ" }, { v: 1e216, s: "UQ" },
+        { v: 1e213, s: "DcTr" }, { v: 1e210, s: "NoTr" }, { v: 1e207, s: "OcTr" }, { v: 1e204, s: "SpTr" }, { v: 1e201, s: "SxTr" },
+        { v: 1e198, s: "QiTr" }, { v: 1e195, s: "QTr" }, { v: 1e192, s: "TTr" }, { v: 1e189, s: "DTr" }, { v: 1e186, s: "UTr" },
+        { v: 1e183, s: "DcT" }, { v: 1e180, s: "NoT" }, { v: 1e177, s: "OcT" }, { v: 1e174, s: "SpT" }, { v: 1e171, s: "SxT" },
+        { v: 1e168, s: "QiT" }, { v: 1e165, s: "QT" }, { v: 1e162, s: "TT" }, { v: 1e159, s: "DT" }, { v: 1e156, s: "UT" },
+        { v: 1e153, s: "DcV" }, { v: 1e150, s: "NoV" }, { v: 1e147, s: "OcV" }, { v: 1e144, s: "SpV" }, { v: 1e141, s: "SxV" },
+        { v: 1e138, s: "QiV" }, { v: 1e135, s: "QV" }, { v: 1e132, s: "TV" }, { v: 1e129, s: "DV" }, { v: 1e126, s: "UV" },
+        { v: 1e123, s: "DcI" }, { v: 1e120, s: "NoI" }, { v: 1e117, s: "OcI" }, { v: 1e114, s: "SpI" }, { v: 1e111, s: "SxI" },
+        { v: 1e108, s: "QiI" }, { v: 1e105, s: "QI" }, { v: 1e102, s: "TI" }, { v: 1e99, s: "DI" }, { v: 1e96, s: "UI" },
+        { v: 1e93, s: "Dc" }, { v: 1e90, s: "No" }, { v: 1e87, s: "Oc" }, { v: 1e84, s: "Sp" }, { v: 1e81, s: "Sx" },
+        { v: 1e78, s: "Qi" }, { v: 1e75, s: "Qa" }, { v: 1e72, s: "T" }, { v: 1e69, s: "B" }, { v: 1e66, s: "M" },
+        { v: 1e63, s: "k" }
+    ];
+    for (const tier of tiers) {
+        if (absNum >= tier.v) {
+            const formatted = (absNum / tier.v).toFixed(2).replace(/\.?0+$/, '');
+            return sign + formatted + tier.s;
         }
-
-        if (bestSuffix) {
-            const quotient = absNum / bestValue;
-            const remainder = absNum % bestValue;
-            const decimal = (remainder * 10n) / bestValue;
-            let formatted = quotient.toString();
-            if (decimal > 0n) {
-                formatted += '.' + decimal.toString();
-            }
-            return sign + formatted + bestSuffix;
-        }
-
-        // Si aucun suffixe ne convient, utiliser la notation scientifique
-        const str = absNum.toString();
-        if (str.length <= 6) return sign + str; // nombre pas trop grand
-        const exp = str.length - 1;
-        const mantissa = str[0] + '.' + str.slice(1, 3); // 2 décimales
-        return sign + mantissa + 'e' + exp;
-    } catch (e) {
-        return num.toString();
     }
+    return sign + absNum.toString();
 }
 
-// ------------------------------------------------------------
-// Endpoints
-// ------------------------------------------------------------
+app.get("/", (req, res) => {
+    res.json({ message: "Numbers Conversion API", version: "3.0", status: "online", max_suffix: "1e258 (QiU)" });
+});
+
 app.get("/api/parse", (req, res) => {
-    const { input } = req.query;
-    if (!input) {
-        return res.status(400).json({ success: false, error: "Parameter 'input' required" });
+    const { input, number } = req.query;
+    if (input) {
+        const result = parseNumberWithSuffix(input);
+        if (result !== null) {
+            return res.json({ success: true, result: result, formatted: formatNumberWithSuffix(result) });
+        }
+        return res.status(400).json({ success: false, error: "Invalid input format" });
     }
-    const result = parseAmountWithSuffix(input);
-    if (result === null) {
-        return res.status(400).json({ success: false, error: "Invalid format. Examples: 1k, 2.5m, 10b, 1e300" });
+    if (number) {
+        const num = parseFloat(number);
+        if (!isNaN(num)) {
+            const limited = Math.min(num, 1e260);
+            return res.json({ success: true, result: limited, formatted: formatNumberWithSuffix(limited) });
+        }
+        return res.status(400).json({ success: false, error: "Invalid number" });
     }
-    const numResult = Number(result);
-    if (numResult <= Number.MAX_SAFE_INTEGER && numResult >= Number.MIN_SAFE_INTEGER) {
-        return res.json({ success: true, input, result: numResult });
-    } else {
-        return res.json({ success: true, input, result: result }); // chaîne pour les grands nombres
+    res.status(400).json({ success: false, error: "Missing input or number parameter" });
+});
+
+app.post("/api/parse", (req, res) => {
+    const { input, number } = req.body;
+    if (input) {
+        const result = parseNumberWithSuffix(input);
+        if (result !== null) {
+            return res.json({ success: true, result: result, formatted: formatNumberWithSuffix(result) });
+        }
+        return res.status(400).json({ success: false, error: "Invalid input format" });
     }
+    if (number !== undefined) {
+        const num = parseFloat(number);
+        if (!isNaN(num)) {
+            const limited = Math.min(num, 1e260);
+            return res.json({ success: true, result: limited, formatted: formatNumberWithSuffix(limited) });
+        }
+        return res.status(400).json({ success: false, error: "Invalid number" });
+    }
+    res.status(400).json({ success: false, error: "Missing input or number parameter" });
 });
 
 app.get("/api/format", (req, res) => {
     const { number } = req.query;
     if (!number) {
-        return res.status(400).json({ success: false, error: "Parameter 'number' required" });
+        return res.status(400).json({ success: false, error: "Missing number parameter" });
     }
-    const formatted = formatNumberWithSuffix(number);
-    res.json({ success: true, number: number, formatted });
+    const num = parseFloat(number);
+    if (isNaN(num)) {
+        return res.status(400).json({ success: false, error: "Invalid number" });
+    }
+    const limited = Math.min(num, 1e260);
+    res.json({ success: true, formatted: formatNumberWithSuffix(limited) });
 });
 
-app.get("/", (req, res) => {
-    res.send(`
-        <h1>Number Conversion API (BigInt + Scientific)</h1>
-        <p>Endpoints:</p>
-        <ul>
-            <li>GET /api/parse?input=2.5m</li>
-            <li>GET /api/parse?input=1e300</li>
-            <li>GET /api/format?number=2500000</li>
-        </ul>
-        <p>Supported suffixes: ${Object.keys(SUFFIXES).join(', ')}</p>
-        <p>Also supports scientific notation e.g. 1e300</p>
-    `);
-});
-
-app.listen(process.env.PORT || 3001, () => {
-    console.log(`BigInt + Scientific conversion API running on port ${process.env.PORT || 3001}`);
-});
+module.exports = app;
