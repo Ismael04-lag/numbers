@@ -1,16 +1,9 @@
 {
-  "name": "number-conversion-api",
+  "name": "numbers-conversion-api",
   "version": "1.0.0",
-  "description": "API to convert numbers with suffixes (k, m, b, t, q, Q, s, S, o, n, d)",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
-  },
+  "description": "Number formatter API for Hedgehog Bank bot",
+  "private": true,
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=18"
   }
 }
