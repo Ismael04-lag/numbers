@@ -87,20 +87,33 @@ const TIERS = [
   { v: "1" + "0".repeat(3),   s: "k"   },
 ].map(t => ({ v: BigInt(t.v), s: t.s }));
 
+const MAX_LIMIT = 10n ** 260n;
+
 function toBigInt(v) {
   if (typeof v === "bigint") return v;
   if (v === undefined || v === null) return 0n;
+  if (String(v).toLowerCase().includes("infinity") || String(v).includes("∞")) {
+    return MAX_LIMIT + 1n;
+  }
   try {
     const clean = String(v).split(".")[0].replace(/[^0-9\-]/g, "") || "0";
     return BigInt(clean);
   } catch { return 0n; }
 }
 
+function isInfinity(num) {
+  if (typeof num === "bigint") return num > MAX_LIMIT;
+  if (typeof num === "string") return num.toLowerCase().includes("infinity") || num.includes("∞");
+  return !isFinite(Number(num)) || Number(num) >= Number(MAX_LIMIT);
+}
+
 function formatNumber(num) {
   const big = toBigInt(num);
+  
+  if (isInfinity(big) || big > MAX_LIMIT) return "∞";
+  
   if (big < 0n) return "-" + formatNumber(-big);
   if (big === 0n) return "0";
-  if (big > 10n ** 260n) return "∞";
 
   for (const tier of TIERS) {
     if (big >= tier.v) {
@@ -153,13 +166,12 @@ const SFX_MAP = {
   ui:  10n**96n,
   di:  10n**99n,
   ti:  10n**102n,
-  qi:  10n**105n,
-  qii: 10n**108n,
-  sxi: 10n**111n,
-  spi: 10n**114n,
-  oci: 10n**117n,
-  noi: 10n**120n,
-  dci: 10n**123n,
+  qii: 10n**105n,
+  sxii:10n**108n,
+  spii:10n**111n,
+  ocii:10n**114n,
+  noii:10n**117n,
+  dcii:10n**120n,
   uv:  10n**126n,
   dv:  10n**129n,
   tv:  10n**132n,
@@ -200,11 +212,19 @@ const SFX_MAP = {
   ocq: 10n**237n,
   noq: 10n**240n,
   dcq: 10n**243n,
+  inf: MAX_LIMIT + 1n,
+  infinity: MAX_LIMIT + 1n,
+  "∞": MAX_LIMIT + 1n,
 };
 
 function parseAmount(input) {
   if (!input) return 0n;
   const str = String(input).toLowerCase().trim();
+  
+  if (str === "inf" || str === "infinity" || str === "∞" || str.includes("infinity") || str.includes("∞")) {
+    return MAX_LIMIT + 1n;
+  }
+  
   const match = str.match(/^(-?\d+(?:\.\d+)?)([a-z]+)?$/i);
   if (!match) return 0n;
   const val = parseFloat(match[1]);
@@ -239,8 +259,13 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: "Max 100 numbers per request." });
       }
       const results = numbers.map(n => {
-        const big = typeof n === "string" && /[a-zA-Z]/.test(n) ? parseAmount(n) : toBigInt(n);
-        return { input: n, formatted: formatNumber(big), raw: big.toString() };
+        const big = typeof n === "string" && /[a-zA-Z∞]/.test(n) ? parseAmount(n) : toBigInt(n);
+        return { 
+          input: n, 
+          formatted: formatNumber(big), 
+          raw: isInfinity(big) ? "infinity" : big.toString(),
+          isInfinity: isInfinity(big)
+        };
       });
       return res.status(200).json({ success: true, results });
     }
@@ -254,12 +279,13 @@ export default async function handler(req, res) {
           example: "/api/format?n=1000000"
         });
       }
-      const big = /[a-zA-Z]/.test(n) ? parseAmount(n) : toBigInt(n);
+      const big = /[a-zA-Z∞]/.test(n) ? parseAmount(n) : toBigInt(n);
       return res.status(200).json({
         success: true,
         input: n,
         formatted: formatNumber(big),
-        raw: big.toString()
+        raw: isInfinity(big) ? "infinity" : big.toString(),
+        isInfinity: isInfinity(big)
       });
     }
 
