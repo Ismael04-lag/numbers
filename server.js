@@ -87,31 +87,33 @@ const TIERS = [
   { v: "1" + "0".repeat(3),   s: "k"   },
 ].map(t => ({ v: BigInt(t.v), s: t.s }));
 
-const MAX_LIMIT = 10n ** 260n;
+const MAX_LIMIT = 10n ** 261n;
 
 function toBigInt(v) {
   if (typeof v === "bigint") return v;
   if (v === undefined || v === null) return 0n;
   if (String(v).toLowerCase().includes("infinity") || String(v).includes("∞")) {
-    return MAX_LIMIT + 1n;
+    return MAX_LIMIT;
   }
   try {
     const clean = String(v).split(".")[0].replace(/[^0-9\-]/g, "") || "0";
-    return BigInt(clean);
+    const result = BigInt(clean);
+    return result;
   } catch { return 0n; }
 }
 
 function isInfinity(num) {
-  if (typeof num === "bigint") return num > MAX_LIMIT;
+  if (typeof num === "bigint") return num >= MAX_LIMIT;
   if (typeof num === "string") return num.toLowerCase().includes("infinity") || num.includes("∞");
   return !isFinite(Number(num)) || Number(num) >= Number(MAX_LIMIT);
 }
 
 function formatNumber(num) {
+  if (isInfinity(num)) return "∞";
+  
   const big = toBigInt(num);
   
-  if (isInfinity(big) || big > MAX_LIMIT) return "∞";
-  
+  if (big >= MAX_LIMIT) return "∞";
   if (big < 0n) return "-" + formatNumber(-big);
   if (big === 0n) return "0";
 
@@ -132,10 +134,10 @@ function formatNumber(num) {
 }
 
 const SFX_MAP = {
-  k:   1_000n,
-  m:   1_000_000n,
-  b:   1_000_000_000n,
-  t:   1_000_000_000_000n,
+  k:   10n**3n,
+  m:   10n**6n,
+  b:   10n**9n,
+  t:   10n**12n,
   qa:  10n**15n,
   qi:  10n**18n,
   sx:  10n**21n,
@@ -166,12 +168,13 @@ const SFX_MAP = {
   ui:  10n**96n,
   di:  10n**99n,
   ti:  10n**102n,
-  qii: 10n**105n,
-  sxii:10n**108n,
-  spii:10n**111n,
-  ocii:10n**114n,
-  noii:10n**117n,
-  dcii:10n**120n,
+  qi:  10n**105n,
+  qii: 10n**108n,
+  sxi: 10n**111n,
+  spi: 10n**114n,
+  oci: 10n**117n,
+  noi: 10n**120n,
+  dci: 10n**123n,
   uv:  10n**126n,
   dv:  10n**129n,
   tv:  10n**132n,
@@ -212,9 +215,14 @@ const SFX_MAP = {
   ocq: 10n**237n,
   noq: 10n**240n,
   dcq: 10n**243n,
-  inf: MAX_LIMIT + 1n,
-  infinity: MAX_LIMIT + 1n,
-  "∞": MAX_LIMIT + 1n,
+  uc:  10n**246n,
+  du:  10n**249n,
+  tu:  10n**252n,
+  qu:  10n**255n,
+  qiu: 10n**258n,
+  inf: MAX_LIMIT,
+  infinity: MAX_LIMIT,
+  "∞": MAX_LIMIT,
 };
 
 function parseAmount(input) {
@@ -222,7 +230,7 @@ function parseAmount(input) {
   const str = String(input).toLowerCase().trim();
   
   if (str === "inf" || str === "infinity" || str === "∞" || str.includes("infinity") || str.includes("∞")) {
-    return MAX_LIMIT + 1n;
+    return MAX_LIMIT;
   }
   
   const match = str.match(/^(-?\d+(?:\.\d+)?)([a-z]+)?$/i);
@@ -232,9 +240,19 @@ function parseAmount(input) {
   if (isNaN(val)) return 0n;
   const base = BigInt(Math.floor(Math.abs(val)));
   const neg = val < 0;
-  if (!sfx) return neg ? -base : base;
+  
+  if (!sfx) {
+    const result = neg ? -base : base;
+    return result;
+  }
+  
   const mult = SFX_MAP[sfx];
-  if (mult) return neg ? -(base * mult) : base * mult;
+  if (mult) {
+    const result = neg ? -(base * mult) : base * mult;
+    if (result >= MAX_LIMIT || result <= -MAX_LIMIT) return neg ? -MAX_LIMIT : MAX_LIMIT;
+    return result;
+  }
+  
   return neg ? -base : base;
 }
 
