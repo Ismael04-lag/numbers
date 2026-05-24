@@ -1,9 +1,3 @@
-// api/format.js — Hedgehog Bank Number Formatter
-// Deploy on Vercel, then call:
-//   GET /api/format?n=1000000000000000000000000000000000000000000000000000
-//   GET /api/format?n=200000000000000&suffix=true
-//   POST /api/format  { "numbers": ["1000000", "2qt", "500k"] }
-
 const TIERS = [
   { v: "1" + "0".repeat(258), s: "Qiu" },
   { v: "1" + "0".repeat(255), s: "Qu"  },
@@ -71,25 +65,24 @@ const TIERS = [
   { v: "1" + "0".repeat(69),  s: "BN"  },
   { v: "1" + "0".repeat(66),  s: "MN"  },
   { v: "1" + "0".repeat(63),  s: "kN"  },
-  // ── Paliers manquants (10^60 → 10^6) ──
   { v: "1" + "0".repeat(60),  s: "NoDc"},
   { v: "1" + "0".repeat(57),  s: "OcDc"},
   { v: "1" + "0".repeat(54),  s: "SpDc"},
-  { v: "1" + "0".repeat(51),  s: "Qt"  },
-  { v: "1" + "0".repeat(48),  s: "Qo"  },
-  { v: "1" + "0".repeat(45),  s: "Qs"  },
-  { v: "1" + "0".repeat(42),  s: "Dz"  },
-  { v: "1" + "0".repeat(39),  s: "Dq"  },
-  { v: "1" + "0".repeat(36),  s: "Ud"  },
-  { v: "1" + "0".repeat(33),  s: "De"  },
-  { v: "1" + "0".repeat(30),  s: "Non" },
-  { v: "1" + "0".repeat(27),  s: "Oct" },
-  { v: "1" + "0".repeat(24),  s: "Sep" },
-  { v: "1" + "0".repeat(21),  s: "Sxt" },
-  { v: "1" + "0".repeat(18),  s: "Qin" },
-  { v: "1" + "0".repeat(15),  s: "Qd"  },
-  { v: "1" + "0".repeat(12),  s: "Tr"  },
-  { v: "1" + "0".repeat(9),   s: "Md"  },
+  { v: "1" + "0".repeat(51),  s: "SxDc"},
+  { v: "1" + "0".repeat(48),  s: "QiDc"},
+  { v: "1" + "0".repeat(45),  s: "QaDc"},
+  { v: "1" + "0".repeat(42),  s: "TDc" },
+  { v: "1" + "0".repeat(39),  s: "DDc" },
+  { v: "1" + "0".repeat(36),  s: "UDc" },
+  { v: "1" + "0".repeat(33),  s: "Dc"  },
+  { v: "1" + "0".repeat(30),  s: "No"  },
+  { v: "1" + "0".repeat(27),  s: "Oc"  },
+  { v: "1" + "0".repeat(24),  s: "Sp"  },
+  { v: "1" + "0".repeat(21),  s: "Sx"  },
+  { v: "1" + "0".repeat(18),  s: "Qi"  },
+  { v: "1" + "0".repeat(15),  s: "Qa"  },
+  { v: "1" + "0".repeat(12),  s: "T"   },
+  { v: "1" + "0".repeat(9),   s: "B"   },
   { v: "1" + "0".repeat(6),   s: "M"   },
   { v: "1" + "0".repeat(3),   s: "k"   },
 ].map(t => ({ v: BigInt(t.v), s: t.s }));
@@ -122,44 +115,91 @@ function formatNumber(num) {
       return `${intPart}${tier.s}`;
     }
   }
-  // < 1000 → séparation par espaces pour lisibilité
   return big.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }
 
-// ── Parse "2qt", "500k", "1.5M" etc. → BigInt ──
 const SFX_MAP = {
   k:   1_000n,
   m:   1_000_000n,
-  md:  1_000_000_000n,
   b:   1_000_000_000n,
-  tr:  1_000_000_000_000n,
-  qd:  10n**15n,
-  qin: 10n**18n,
-  sxt: 10n**21n,
-  sep: 10n**24n,
-  oct: 10n**27n,
-  non: 10n**30n,
-  de:  10n**33n,
-  ud:  10n**36n,
-  dq:  10n**39n,
-  dz:  10n**42n,
-  qs:  10n**45n,
-  qo:  10n**48n,
-  qt:  10n**51n,
-  nodc:10n**60n,
-  ocdc:10n**57n,
+  t:   1_000_000_000_000n,
+  qa:  10n**15n,
+  qi:  10n**18n,
+  sx:  10n**21n,
+  sp:  10n**24n,
+  oc:  10n**27n,
+  no:  10n**30n,
+  dc:  10n**33n,
+  udc: 10n**36n,
+  ddc: 10n**39n,
+  tdc: 10n**42n,
+  qadc:10n**45n,
+  qidc:10n**48n,
+  sxdc:10n**51n,
   spdc:10n**54n,
+  ocdc:10n**57n,
+  nodc:10n**60n,
   kn:  10n**63n,
   mn:  10n**66n,
   bn:  10n**69n,
   tn:  10n**72n,
-  qa:  10n**75n,
-  qi:  10n**78n,
-  sx:  10n**81n,
-  sp:  10n**84n,
-  oc:  10n**87n,
-  no:  10n**90n,
-  dc:  10n**93n,
+  qan: 10n**75n,
+  qin: 10n**78n,
+  sxn: 10n**81n,
+  spn: 10n**84n,
+  ocn: 10n**87n,
+  non: 10n**90n,
+  dcn: 10n**93n,
+  ui:  10n**96n,
+  di:  10n**99n,
+  ti:  10n**102n,
+  qi:  10n**105n,
+  qii: 10n**108n,
+  sxi: 10n**111n,
+  spi: 10n**114n,
+  oci: 10n**117n,
+  noi: 10n**120n,
+  dci: 10n**123n,
+  uv:  10n**126n,
+  dv:  10n**129n,
+  tv:  10n**132n,
+  qv:  10n**135n,
+  qiv: 10n**138n,
+  sxv: 10n**141n,
+  spv: 10n**144n,
+  ocv: 10n**147n,
+  nov: 10n**150n,
+  dcv: 10n**153n,
+  ut:  10n**156n,
+  dt:  10n**159n,
+  tt:  10n**162n,
+  qt:  10n**165n,
+  qit: 10n**168n,
+  sxt: 10n**171n,
+  spt: 10n**174n,
+  oct: 10n**177n,
+  not: 10n**180n,
+  dct: 10n**183n,
+  utr: 10n**186n,
+  dtr: 10n**189n,
+  ttr: 10n**192n,
+  qtr: 10n**195n,
+  qitr:10n**198n,
+  sxtr:10n**201n,
+  sptr:10n**204n,
+  octr:10n**207n,
+  notr:10n**210n,
+  dctr:10n**213n,
+  uq:  10n**216n,
+  dq:  10n**219n,
+  tq:  10n**222n,
+  qq:  10n**225n,
+  qiq: 10n**228n,
+  sxq: 10n**231n,
+  spq: 10n**234n,
+  ocq: 10n**237n,
+  noq: 10n**240n,
+  dcq: 10n**243n,
 };
 
 function parseAmount(input) {
@@ -178,7 +218,6 @@ function parseAmount(input) {
   return neg ? -base : base;
 }
 
-// ── CORS helper ──
 function cors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -190,7 +229,6 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    // ── POST: batch convert ──
     if (req.method === "POST") {
       const body = req.body || {};
       const numbers = Array.isArray(body.numbers) ? body.numbers : [];
@@ -207,14 +245,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, results });
     }
 
-    // ── GET: single convert ──
     if (req.method === "GET") {
       const { n } = req.query;
       if (!n) {
         return res.status(400).json({
           success: false,
           error: "Missing query param ?n=<number>",
-          example: "/api/format?n=1000000000000000000000000000000000000000000000000000"
+          example: "/api/format?n=1000000"
         });
       }
       const big = /[a-zA-Z]/.test(n) ? parseAmount(n) : toBigInt(n);
